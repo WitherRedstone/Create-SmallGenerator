@@ -1,0 +1,6 @@
+{
+  "values": [
+    "create_small_generator:kinetic_dynamo",
+    "create_small_generator:electric_motor"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"render_type": "cutout",
+	"textures": {
+		"andesite_funnel_frame": "create_small_generator:block/electric_motor/andesite_funnel_frame",
+		"particle": "create_small_generator:block/electric_motor/fan_side",
+		"fan_side": "create_small_generator:block/electric_motor/fan_side",
+		"front_baffle": "create_small_generator:block/electric_motor/front_baffle",
+		"gearbox": "create_small_generator:block/electric_motor/gearbox",
+		"gearbox_redstone": "create_small_generator:block/electric_motor/gearbox_redstone",
+		"copper_block": "block/copper_block"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "z", "origin": [4, 7.75, 4]},
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#fan_side"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#fan_side"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#fan_side"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#fan_side"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#andesite_funnel_frame"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#andesite_funnel_frame"}
+			}
+		},
+		{
+			"from": [1.95, 16, 1.95],
+			"to": [14.05, 0, 14.05],
+			"rotation": {"angle": 0, "axis": "z", "origin": [4, 7.75, 4]},
+			"faces": {
+				"north": {"uv": [2, 0, 14, 16], "rotation": 180, "texture": "#fan_side"},
+				"east": {"uv": [2, 0, 14, 16], "rotation": 180, "texture": "#fan_side"},
+				"south": {"uv": [2, 0, 14, 16], "rotation": 180, "texture": "#fan_side"},
+				"west": {"uv": [2, 0, 14, 16], "rotation": 180, "texture": "#fan_side"}
+			}
+		},
+		{
+			"from": [1.95, 0.95, 1.95],
+			"to": [14.05, 8.05, 14.05],
+			"rotation": {"angle": 0, "axis": "z", "origin": [4, 7.75, 4]},
+			"faces": {
+				"up": {"uv": [2, 2, 14, 14], "texture": "#gearbox_redstone"},
+				"down": {"uv": [2, 2, 14, 14], "texture": "#gearbox"}
+			}
+		},
+		{
+			"from": [2, 8.2, 2],
+			"to": [14, 14.85, 14],
+			"rotation": {"angle": 0, "axis": "z", "origin": [4, 7.75, 4]},
+			"faces": {
+				"north": {"uv": [1, 4, 15, 10], "texture": "#copper_block"},
+				"east": {"uv": [1, 4, 15, 10], "texture": "#copper_block"},
+				"south": {"uv": [1, 4, 15, 10], "texture": "#copper_block"},
+				"west": {"uv": [1, 4, 15, 10], "texture": "#copper_block"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#copper_block"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#copper_block"}
+			}
+		},
+		{
+			"from": [2, 14.95, 2],
+			"to": [14, 15.1, 14],
+			"rotation": {"angle": 0, "axis": "z", "origin": [4, 7.75, 4]},
+			"faces": {
+				"up": {"uv": [2, 2, 14, 14], "texture": "#front_baffle"}
+			}
+		},
+		{
+			"from": [7, 15, 7],
+			"to": [9, 16, 9],
+			"rotation": {"angle": 0, "axis": "z", "origin": [4, 7.75, 4]},
+			"faces": {
+				"north": {"uv": [11, 5, 5, 11], "texture": "#gearbox_redstone"},
+				"east": {"uv": [5, 5, 11, 11], "texture": "#gearbox_redstone"},
+				"south": {"uv": [11, 5, 5, 11], "texture": "#gearbox_redstone"},
+				"west": {"uv": [5, 5, 11, 11], "texture": "#gearbox_redstone"},
+				"up": {"uv": [5, 5, 11, 11], "texture": "#gearbox_redstone"}
+			}
+		}
+	],
+	"groups": [
+		{
+			"name": "group",
+			"origin": [0, 0, 0],
+			"color": 0,
+			"children": [0, 1, 2, 3, 4, 5]
+		}
+	]
+}

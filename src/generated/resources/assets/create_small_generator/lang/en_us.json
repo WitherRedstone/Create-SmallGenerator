@@ -1,0 +1,27 @@
+{
+  "itemGroup.create_small_generator_tab": "Create: Small Generator",
+
+  "block.create_small_generator.kinetic_dynamo": "Kinetic Dynamo",
+  "block.create_small_generator.electric_motor": "Electric Motor",
+
+  "create.create_small_generator.tooltip.kinetic_dynamo.energy_output": "Energy Output: %s %s",
+  "create.create_small_generator.tooltip.kinetic_dynamo.energy_per_second": "Energy per Second: %s %s",
+  "create.create_small_generator.tooltip.kinetic_dynamo.stress_consumed": "Stress Consumed: %s su",
+  "create.create_small_generator.tooltip.kinetic_dynamo.stress_capacity": "Stress Capacity: %s su/RPM",
+
+  "create.create_small_generator.tooltip.electric_motor.speed": "Speed: %s %s",
+  "create.create_small_generator.tooltip.electric_motor.energy_consumed": "Energy Consumed: %s %s",
+  "create.create_small_generator.tooltip.electric_motor.energy_per_second": "Energy per Second: %s %s",
+  "create.create_small_generator.tooltip.electric_motor.stress_generated": "Stress Generated: %s su",
+
+  "config.create_small_generator.kinetic_dynamo": "Kinetic Dynamo",
+  "config.create_small_generator.energy_per_stress": "Energy generated per unit of speed (FE/t per RPM)",
+  "config.create_small_generator.stress_capacity": "Stress capacity consumed by the generator (unit: su)",
+  "config.create_small_generator.max_transfer_rate": "Maximum energy transferred per operation (unit: FE/t)",
+  "config.create_small_generator.electric_motor": "Electric Motor",
+  "config.create_small_generator.motor_energy_capacity": "Internal energy storage capacity of the Electric Motor (unit: FE)",
+  "config.create_small_generator.motor_speed_per_energy": "Speed generated per 1 FE consumed (RPM per FE)",
+  "config.create_small_generator.motor_stress_per_energy": "Stress capacity coefficient per 1 FE consumed (final stress = consumed_FE × this_value ÷ RPM)",
+  "config.create_small_generator.motor_max_input_rate": "Maximum energy input per tick (unit: FE/t)",
+  "config.create_small_generator.motor_max_stress_output": "Maximum stress output of electric motor (in SU)"
+}

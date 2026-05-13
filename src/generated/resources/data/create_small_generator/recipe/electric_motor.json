@@ -1,0 +1,39 @@
+{
+  "type": "create:mechanical_crafting",
+  "accept_mirrored": true,
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "create:andesite_casing"
+    },
+    "B": {
+      "tag": "c:storage_blocks/copper"
+    },
+    "C": {
+      "tag": "c:gems/amethyst"
+    },
+    "D": {
+      "item": "create:shaft"
+    },
+    "E": {
+      "tag": "c:storage_blocks/diamond"
+    },
+    "F": {
+      "tag": "c:plates/iron"
+    },
+    "G": {
+      "tag": "c:nuggets/copper"
+    }
+  },
+  "pattern": [
+    " FGF ",
+    "FCDCF",
+    "GBABG",
+    "FCECF",
+    " FGF "
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_small_generator:electric_motor"
+  }
+}
