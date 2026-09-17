@@ -1,6 +1,6 @@
 package com.chinaex123.create_small_generator.block.ElectricMotor;
 
-import com.chinaex123.create_small_generator.config.CommonConfig;
+import com.chinaex123.create_small_generator.config.CSGServerConfig;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.minecraft.ChatFormatting;
@@ -17,36 +17,37 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * 电动马达方块实体
- * 将 FE 能量转换为动能（应力）输出
+ * 电动马达方块实体。
+ * <p>
+ * 继承自 Create 的 {@link GeneratingKineticBlockEntity}，作为动能来源。
+ * 从正面接收 FE 能量，按配置比例将能量转化为旋转速度与应力输出。
+ * 能量消耗、转速上限、应力上限均由服务端配置决定。
  */
 public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
 
-    /** 马达是否处于激活状态（有能量输入时激活） */
+    /** 当前是否处于运行状态（有能量消耗且产出转速） */
     private boolean active = false;
-
-    /** 当前产生的转速（RPM） */
+    /** 当前输出的旋转速度（RPM） */
     private float currentSpeed = 0;
-
-    /** 记录当前 tick 的实际 FE 消耗量 */
+    /** 当前每 tick 消耗的能量（FE/t） */
     private int currentConsumption = 0;
-
-    /** 内部存储的 FE 能量值 */
+    /** 内部存储的能量（FE） */
     private int storedEnergy = 0;
-
-    /** 能量存储容量上限（从配置读取） */
+    /** 能量存储上限（FE），由配置决定 */
     private final int capacity;
-
-    /** 每 tick 最大能量输入速率（从配置读取） */
+    /** 最大能量输入速率（FE/t），由配置决定 */
     private final int maxTransfer;
 
     /**
-     * FE 能量存储处理器
-     * 实现 NeoForge 的能量存储接口，处理能量的存入和提取
+     * 能量处理能力实现。
+     * <p>
+     * 允许外部通过正面输入或提取能量，接收与提取均受容量和最大传输速率限制。
+     * 非模拟操作会更新内部能量并标记变更。
      */
     private final IEnergyStorage energyHandler = new IEnergyStorage() {
         @Override
         public int receiveEnergy(int maxReceive, boolean simulate) {
+            // 接收量受输入速率和剩余容量双重限制
             int received = Math.min(maxReceive, Math.min(capacity - storedEnergy, maxTransfer));
             if (!simulate) {
                 storedEnergy += received;
@@ -57,6 +58,7 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
 
         @Override
         public int extractEnergy(int maxExtract, boolean simulate) {
+            // 提取量不能超过当前存储
             int extracted = Math.min(maxExtract, storedEnergy);
             if (!simulate) {
                 storedEnergy -= extracted;
@@ -87,23 +89,22 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     };
 
     /**
-     * 构造函数
+     * 构造电动马达方块实体。
      *
      * @param typeIn 方块实体类型
-     * @param pos 方块位置
-     * @param state 方块状态
+     * @param pos    方块位置
+     * @param state  方块状态
      */
     public ElectricMotorBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
-        this.capacity = CommonConfig.MOTOR_ENERGY_CAPACITY.get();
-        this.maxTransfer = CommonConfig.MOTOR_MAX_INPUT_RATE.get();
+        this.capacity = CSGServerConfig.MOTOR_ENERGY_CAPACITY.get();
+        this.maxTransfer = CSGServerConfig.MOTOR_MAX_INPUT_RATE.get();
     }
 
     /**
-     * 获取马达产生的转速
-     * Create 框架调用此方法获取该方块作为动力源提供的转速
+     * 获取当前产生的旋转速度。
      *
-     * @return 当前转速（RPM），未激活时返回 0
+     * @return 运行中返回当前速度，否则返回 0
      */
     @Override
     public float getGeneratedSpeed() {
@@ -114,14 +115,12 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 计算并返回该方块提供的应力容量
-     * Create 框架会将返回值乘以当前转速得到总应力输出
-     * 因此需要返回"每 RPM 的应力容量"而非总应力
+     * 计算附加的应力容量。
+     * <p>
+     * 根据当前能量消耗与配置的每单位能量应力系数计算总应力，
+     * 再受最大应力输出限制，最终换算为每 RPM 的应力值。
      *
-     * 计算公式：返回值为 (实际消耗FE × 应力系数 / 当前转速)
-     * 最终应力 = 返回值 × 转速 = 实际消耗FE × 应力系数（受最大值限制）
-     *
-     * @return 每 RPM 的应力容量，未激活时返回 0
+     * @return 每 RPM 的应力容量，无输出时返回 0
      */
     @Override
     public float calculateAddedStressCapacity() {
@@ -130,15 +129,12 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
             return 0;
         }
 
-        // 计算本 tick 产生的总应力
-        int stressPerEnergy = CommonConfig.MOTOR_STRESS_PER_ENERGY.get();
+        int stressPerEnergy = CSGServerConfig.MOTOR_STRESS_PER_ENERGY.get();
         int totalStress = currentConsumption * stressPerEnergy;
 
-        // 应用最大应力限制
-        int maxStress = CommonConfig.MOTOR_MAX_STRESS_OUTPUT.get();
+        int maxStress = CSGServerConfig.MOTOR_MAX_STRESS_OUTPUT.get();
         int limitedStress = Math.min(totalStress, maxStress);
 
-        // Create 会将返回值乘以转速，所以需要返回"每 RPM 的应力容量"
         float stressPerRPM = limitedStress / currentSpeed;
 
         this.lastCapacityProvided = limitedStress;
@@ -146,8 +142,10 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 每 tick 执行的主要逻辑
-     * 处理 FE 能量消耗、转速计算和应力输出
+     * 每 tick 更新逻辑。
+     * <p>
+     * 仅在服务端执行：根据当前存储能量确定是否运行，
+     * 按配置限制消耗能量并换算转速，随后同步旋转状态。
      */
     @Override
     public void tick() {
@@ -157,10 +155,8 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
             return;
         }
 
-        // 每刻开始时重置消耗量
         currentConsumption = 0;
 
-        // 计算本 tick 应该消耗多少 FE
         int targetConsumption = maxTransfer;
         int actualConsumption = Math.min(storedEnergy, targetConsumption);
 
@@ -171,22 +167,19 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
         int newSpeed = 0;
 
         if (active) {
-            // 根据最大应力限制反推最大允许的 FE 消耗
-            int maxStress = CommonConfig.MOTOR_MAX_STRESS_OUTPUT.get();
-            int stressPerEnergy = CommonConfig.MOTOR_STRESS_PER_ENERGY.get();
+            int maxStress = CSGServerConfig.MOTOR_MAX_STRESS_OUTPUT.get();
+            int stressPerEnergy = CSGServerConfig.MOTOR_STRESS_PER_ENERGY.get();
+            // 由最大应力反推允许的最大能量消耗
             int maxAllowedConsumption = maxStress / stressPerEnergy;
 
-            // 限制实际消耗不超过最大应力对应的 FE 量
             int limitedConsumption = Math.min(actualConsumption, maxAllowedConsumption);
 
-            // 消耗 FE
             consumed = energyHandler.extractEnergy(limitedConsumption, false);
             if (consumed > 0) {
-                // 记录实际消耗（用于应力计算）
                 currentConsumption = consumed;
 
-                // 转速受限于 256 RPM
-                newSpeed = Math.min(consumed * CommonConfig.MOTOR_SPEED_PER_ENERGY.get(), 256);
+                // 转速由消耗能量换算，并限制在 256 RPM 以内
+                newSpeed = Math.min(consumed * CSGServerConfig.MOTOR_SPEED_PER_ENERGY.get(), 256);
             } else {
                 active = false;
                 currentConsumption = 0;
@@ -195,13 +188,11 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
             currentConsumption = 0;
         }
 
-        // 更新转速
         if (newSpeed != currentSpeed) {
             currentSpeed = newSpeed;
             setChanged();
         }
 
-        // 状态变化时标记
         if (wasActive != active) {
             setChanged();
         }
@@ -210,12 +201,9 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 从 NBT 标签读取方块实体数据
-     * 用于世界保存/加载和数据包同步
-     *
-     * @param compound NBT 标签数据
-     * @param registries 注册表提供者
-     * @param clientPacket 是否为客户端数据包
+     * 从 NBT 读取数据。
+     * <p>
+     * 除父类数据外，还读取运行状态、当前转速、存储能量与当前消耗。
      */
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
@@ -227,12 +215,9 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 将方块实体数据写入 NBT 标签
-     * 用于世界保存/加载和数据包同步
-     *
-     * @param compound NBT 标签数据
-     * @param registries 注册表提供者
-     * @param clientPacket 是否为客户端数据包
+     * 将数据写入 NBT。
+     * <p>
+     * 除父类数据外，还写入运行状态、当前转速、存储能量与当前消耗。
      */
     @Override
     protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
@@ -244,12 +229,11 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 获取能量存储处理器的静态方法
-     * 用于 NeoForge 能力系统注册
+     * 静态获取能量处理能力的入口。
      *
-     * @param be 方块实体实例
-     * @param side 查询的方向
-     * @return 能量存储处理器，仅在正面方向返回
+     * @param be   方块实体实例
+     * @param side 访问方向
+     * @return 对应方向的能量处理器，无能力时返回 null
      */
     @Nullable
     public static IEnergyStorage getEnergyHandler(ElectricMotorBlockEntity be, Direction side) {
@@ -257,11 +241,12 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 获取指定方向的能量存储处理器
-     * 仅在马达正面（FACING 方向）提供能量接口
+     * 获取指定方向的能量处理能力。
+     * <p>
+     * 仅当访问方向为方块正面时返回能量处理器，其余方向返回 null。
      *
-     * @param side 查询的方向
-     * @return 能量存储处理器，非正面方向返回 null
+     * @param side 访问方向
+     * @return 正面返回能量处理器，否则返回 null
      */
     @Nullable
     private IEnergyStorage getEnergyHandler(Direction side) {
@@ -273,12 +258,13 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 添加到 goggles（工程师护目镜）提示信息
-     * 显示马达的当前状态：转速、能量消耗、应力输出等信息
+     * 添加护目镜提示信息。
+     * <p>
+     * 显示当前转速、每 tick 能量消耗、每秒能量消耗以及产生的应力/最大应力。
      *
-     * @param tooltip 提示文本列表
+     * @param tooltip        提示信息列表
      * @param isPlayerSneaking 玩家是否潜行
-     * @return 总是返回 true，表示已添加自定义提示
+     * @return 始终返回 true
      */
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
@@ -286,35 +272,36 @@ public class ElectricMotorBlockEntity extends GeneratingKineticBlockEntity {
 
         int speed = Math.round(Math.abs(getSpeed()));
 
-        // 显示实际消耗
         int energyConsumed = currentConsumption;
         int energyPerSecond = energyConsumed * 20;
 
-        // 计算应力（整数）
-        int stressGenerated = energyConsumed * CommonConfig.MOTOR_STRESS_PER_ENERGY.get();
-        int maxStress = CommonConfig.MOTOR_MAX_STRESS_OUTPUT.get();
+        int stressGenerated = energyConsumed * CSGServerConfig.MOTOR_STRESS_PER_ENERGY.get();
+        int maxStress = CSGServerConfig.MOTOR_MAX_STRESS_OUTPUT.get();
 
-        // 应用最大值限制
         stressGenerated = Math.min(stressGenerated, maxStress);
 
+        // 转速行
         CreateLang.translate("create_small_generator.tooltip.electric_motor.speed",
                         CreateLang.number(speed).component().withStyle(ChatFormatting.AQUA),
                         CreateLang.text("RPM").component().withStyle(ChatFormatting.GRAY))
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip);
 
+        // 每 tick 能量消耗行
         CreateLang.translate("create_small_generator.tooltip.electric_motor.energy_consumed",
                         CreateLang.number(energyConsumed).component().withStyle(ChatFormatting.RED),
                         CreateLang.text("FE/t").component().withStyle(ChatFormatting.GRAY))
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip);
 
+        // 每秒能量消耗行
         CreateLang.translate("create_small_generator.tooltip.electric_motor.energy_per_second",
                         CreateLang.number(energyPerSecond).component().withStyle(ChatFormatting.YELLOW),
                         CreateLang.text("FE/s").component().withStyle(ChatFormatting.GRAY))
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip);
 
+        // 应力产出 / 上限行
         CreateLang.translate("create_small_generator.tooltip.electric_motor.stress_generated",
                         CreateLang.number(stressGenerated).component().withStyle(ChatFormatting.GREEN),
                         CreateLang.text("/").component().withStyle(ChatFormatting.GRAY),

@@ -2,7 +2,7 @@ package com.chinaex123.create_small_generator;
 
 import com.chinaex123.create_small_generator.block.ElectricMotor.ElectricMotorBlockEntity;
 import com.chinaex123.create_small_generator.block.KineticDynamo.KineticDynamoBlockEntity;
-import com.chinaex123.create_small_generator.config.CommonConfig;
+import com.chinaex123.create_small_generator.config.CSGServerConfig;
 import com.chinaex123.create_small_generator.init.CSGBlockEntities;
 import com.chinaex123.create_small_generator.init.CSGBlocks;
 import com.chinaex123.create_small_generator.init.CSGCreativeTabs;
@@ -48,7 +48,7 @@ public class CreateSmallGenerator {
         CSGBlockEntities.register();
         CSGCreativeTabs.register(modEventBus);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.COMMON, CSGServerConfig.SPEC);
 
         modEventBus.addListener(RegisterCapabilitiesEvent.class, event -> {
             event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK,
@@ -60,17 +60,10 @@ public class CreateSmallGenerator {
         });
 
         modEventBus.addListener(FMLCommonSetupEvent.class, event -> {
-            // 注册方块的应力容量值
-//            event.enqueueWork(() -> {
-//                BlockStressValues.CAPACITIES.register(CSGBlocks.ELECTRIC_MOTOR.get(),
-//                        () -> 64.0
-//                );
-//            });
-
             // 注册方块的应力影响值
             event.enqueueWork(() -> {
                 BlockStressValues.IMPACTS.register(CSGBlocks.KINETIC_DYNAMO.get(),
-                        () -> CommonConfig.STRESS_CAPACITY.get()
+                        () -> CSGServerConfig.STRESS_CAPACITY.get()
                 );
             });
         });

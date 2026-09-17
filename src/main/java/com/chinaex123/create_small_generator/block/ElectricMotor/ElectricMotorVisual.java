@@ -13,20 +13,30 @@ import net.minecraft.core.Direction;
 import java.util.function.Consumer;
 
 /**
- * 电动马达方块的可视化类，用于Flywheel渲染引擎
- * 处理传动杆模型的实例化、更新和光照计算
+ * 电动马达方块实体的 Flywheel 可视化。
+ * <p>
+ * 继承自 Create 的 {@link KineticBlockEntityVisual}，负责在 Flywheel 可视化系统中
+ * 渲染马达的动力轴实例。当可视化可用时，由本类接管渲染，
+ * 而 {@link ElectricMotorRenderer} 中的常规渲染会被跳过。
  */
 public class ElectricMotorVisual extends KineticBlockEntityVisual<ElectricMotorBlockEntity> {
+
+    /** 动力轴的旋转实例 */
     protected final RotatingInstance shaft;
+    /** 方块朝向 */
     final Direction direction;
+    /** 方块朝向的反方向（背面） */
     private final Direction opposite;
 
     /**
-     * 构造函数，初始化可视化实例
+     * 构造电动马达可视化实例。
+     * <p>
+     * 获取方块朝向与背面，创建动力轴旋转实例，
+     * 并设置其位置、朝向及初始旋转状态。
      *
-     * @param context 可视化上下文
-     * @param blockEntity 电力引擎方块实体
-     * @param partialTick 部分刻数
+     * @param context     可视化上下文
+     * @param blockEntity 电动马达方块实体
+     * @param partialTick 部分 tick 插值
      */
     public ElectricMotorVisual(VisualizationContext context, ElectricMotorBlockEntity blockEntity, float partialTick) {
         super(context, blockEntity, partialTick);
@@ -34,11 +44,12 @@ public class ElectricMotorVisual extends KineticBlockEntityVisual<ElectricMotorB
         direction = blockState.getValue(ElectricMotorBlock.FACING);
         opposite = direction.getOpposite();
 
-        // 创建旋转实例用于传动杆模型
+        // 创建半轴模型的旋转实例
         shaft = instancerProvider()
                 .instancer(AllInstanceTypes.ROTATING, Models.partial(AllPartialModels.SHAFT_HALF))
                 .createInstance();
 
+        // 设置实例位置、朝向背面并应用初始状态
         shaft.setup(blockEntity)
                 .setPosition(getVisualPosition())
                 .rotateToFace(Direction.SOUTH, opposite)
@@ -46,9 +57,11 @@ public class ElectricMotorVisual extends KineticBlockEntityVisual<ElectricMotorB
     }
 
     /**
-     * 更新方法，每帧调用以更新实例状态
+     * 更新可视化实例。
+     * <p>
+     * 根据方块实体当前状态刷新旋转实例的转速等信息。
      *
-     * @param pt 部分刻数
+     * @param pt 部分 tick 插值
      */
     @Override
     public void update(float pt) {
@@ -57,9 +70,11 @@ public class ElectricMotorVisual extends KineticBlockEntityVisual<ElectricMotorB
     }
 
     /**
-     * 更新光照信息
+     * 更新光照。
+     * <p>
+     * 以方块背面作为光照参考位置，重新计算动力轴实例的光照。
      *
-     * @param partialTick 部分刻数
+     * @param partialTick 部分 tick 插值
      */
     @Override
     public void updateLight(float partialTick) {
@@ -68,7 +83,9 @@ public class ElectricMotorVisual extends KineticBlockEntityVisual<ElectricMotorB
     }
 
     /**
-     * 删除可视化实例
+     * 删除可视化实例。
+     * <p>
+     * 释放动力轴旋转实例占用的资源。
      */
     @Override
     protected void _delete() {
@@ -76,7 +93,9 @@ public class ElectricMotorVisual extends KineticBlockEntityVisual<ElectricMotorB
     }
 
     /**
-     * 收集破碎实例用于渲染破坏动画
+     * 收集用于破坏动画的实例。
+     * <p>
+     * 将动力轴实例提供给消费者，用于播放方块破碎效果。
      *
      * @param consumer 实例消费者
      */

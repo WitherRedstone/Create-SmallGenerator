@@ -3,6 +3,7 @@ package com.chinaex123.create_small_generator.init;
 import com.chinaex123.create_small_generator.block.ElectricMotor.ElectricMotorBlock;
 import com.chinaex123.create_small_generator.block.KineticDynamo.KineticDynamoBlock;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.AllItems;
 import com.simibubi.create.api.data.recipe.MechanicalCraftingRecipeBuilder;
 import com.simibubi.create.foundation.data.*;
 import com.tterrag.registrate.util.entry.BlockEntry;
@@ -17,7 +18,7 @@ import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 
 public class CSGBlocks {
 
-    // 动力发电机
+    /** 动力发电机 */
     public static final BlockEntry<KineticDynamoBlock> KINETIC_DYNAMO = REGISTRATE
             .block("kinetic_dynamo", KineticDynamoBlock::new)
             .initialProperties(() -> Blocks.STONE)
@@ -40,17 +41,17 @@ public class CSGBlocks {
                             .patternLine( "GBABG")
                             .patternLine( "FCECF")
                             .patternLine( " FGF ")
-                            .key('A', Ingredient.of(AllBlocks.ANDESITE_CASING))
+                            .key('A', Ingredient.of(AllBlocks.BRASS_CASING))
                             .key('B', Ingredient.of(CSGItemTags.neoforgeTag("storage_blocks/copper")))
-                            .key('C', Ingredient.of(CSGItemTags.neoforgeTag("gems/amethyst")))
+                            .key('C', Ingredient.of(AllItems.ANDESITE_ALLOY))
                             .key('D', Ingredient.of(AllBlocks.SHAFT))
                             .key('E', Ingredient.of(CSGItemTags.neoforgeTag("storage_blocks/redstone")))
-                            .key('F', Ingredient.of(CSGItemTags.neoforgeTag("plates/iron")))
-                            .key('G', Ingredient.of(CSGItemTags.neoforgeTag("nuggets/copper")))
+                            .key('F', Ingredient.of(CSGItemTags.neoforgeTag("gems/amethyst")))
+                            .key('G', Ingredient.of(AllItems.BRASS_INGOT))
                             .build(registrateRecipeProvider))
             .register();
 
-    // 电动马达
+    /** 电动马达 */
     public static final BlockEntry<ElectricMotorBlock> ELECTRIC_MOTOR = REGISTRATE
             .block("electric_motor", ElectricMotorBlock::new)
             .initialProperties(() -> Blocks.STONE)
@@ -73,13 +74,13 @@ public class CSGBlocks {
                             .patternLine( "GBABG")
                             .patternLine( "FCECF")
                             .patternLine( " FGF ")
-                            .key('A', Ingredient.of(AllBlocks.ANDESITE_CASING))
+                            .key('A', Ingredient.of(AllBlocks.BRASS_CASING))
                             .key('B', Ingredient.of(CSGItemTags.neoforgeTag("storage_blocks/copper")))
-                            .key('C', Ingredient.of(CSGItemTags.neoforgeTag("gems/amethyst")))
+                            .key('C', Ingredient.of(CSGItemTags.neoforgeTag("gems/diamond")))
                             .key('D', Ingredient.of(AllBlocks.SHAFT))
-                            .key('E', Ingredient.of(CSGItemTags.neoforgeTag("storage_blocks/diamond")))
-                            .key('F', Ingredient.of(CSGItemTags.neoforgeTag("plates/iron")))
-                            .key('G', Ingredient.of(CSGItemTags.neoforgeTag("nuggets/copper")))
+                            .key('E', Ingredient.of(CSGItemTags.neoforgeTag("storage_blocks/redstone")))
+                            .key('F', Ingredient.of(CSGItemTags.neoforgeTag("gems/amethyst")))
+                            .key('G', Ingredient.of(AllItems.BRASS_INGOT))
                             .build(registrateRecipeProvider))
             .register();
 

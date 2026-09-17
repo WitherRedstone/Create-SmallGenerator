@@ -11,31 +11,42 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 电动马达方块类，将应力转换为能量输出
- * 功能与动力发电机相反：消耗应力产生旋转动力
+ * 电动马达方块。
+ * <p>
+ * 继承自 Create 的 {@link DirectionalKineticBlock}，实现 {@link IBE} 以绑定方块实体。
+ * 方块具有朝向属性，朝向决定能量输入端与动力输出轴的方向。
+ * 放置时根据玩家视线方向与是否按下 Shift 键确定最终朝向。
  */
 public class ElectricMotorBlock extends DirectionalKineticBlock implements IBE<ElectricMotorBlockEntity> {
 
+    /**
+     * 构造电动马达方块。
+     *
+     * @param properties 方块属性
+     */
     public ElectricMotorBlock(Properties properties) {
         super(properties);
     }
 
     /**
-     * 获取方块放置时的状态
-     * 根据玩家视角和潜行状态确定方块的朝向
+     * 确定方块放置时的状态。
+     * <p>
+     * 优先获取玩家视线对应的朝向，若为垂直方向则改用水平朝向。
+     * 未按下 Shift 时朝向取反，使正面朝向玩家。
      *
-     * @param context 方块放置上下文
-     * @return BlockState 放置后的方块状态，包含正确的朝向信息
+     * @param context 放置上下文
+     * @return 带有最终朝向的方块状态
      */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction preferredFacing = getPreferredFacing(context);
 
-        // 如果首选方向为空或为垂直方向，则使用玩家的水平方向
+        // 视线朝向为垂直或无效时，改用水平朝向
         if (preferredFacing == null || preferredFacing.getAxis() == Direction.Axis.Y) {
             preferredFacing = context.getHorizontalDirection();
         }
 
+        // 未按下 Shift 时正面朝向玩家
         boolean shiftKeyDown = context.getPlayer() != null && context.getPlayer().isShiftKeyDown();
         Direction finalFacing = shiftKeyDown ? preferredFacing : preferredFacing.getOpposite();
 
@@ -43,11 +54,12 @@ public class ElectricMotorBlock extends DirectionalKineticBlock implements IBE<E
     }
 
     /**
-     * 获取方块的旋转轴
-     * 根据方块的朝向确定其旋转轴方向
+     * 获取旋转轴。
+     * <p>
+     * 旋转轴与方块朝向的轴一致。
      *
      * @param state 方块状态
-     * @return Direction.Axis 方块的旋转轴
+     * @return 旋转轴
      */
     @Override
     public Direction.Axis getRotationAxis(BlockState state) {
@@ -55,14 +67,15 @@ public class ElectricMotorBlock extends DirectionalKineticBlock implements IBE<E
     }
 
     /**
-     * 检查指定方向是否有传动杆连接
-     * 传动杆只能连接到方块的正面(应力输出面)
+     * 判断指定面是否有动力轴。
+     * <p>
+     * 仅在与朝向相反的一面（即背面）存在动力轴。
      *
      * @param world 世界读取器
-     * @param pos 方块位置
+     * @param pos   方块位置
      * @param state 方块状态
-     * @param face 检查的方向
-     * @return boolean 如果该方向是方块正面则返回true，否则返回false
+     * @param face  待判断的面
+     * @return 该面为背面时返回 true
      */
     @Override
     public boolean hasShaftTowards(LevelReader world, BlockPos pos, BlockState state, Direction face) {
@@ -70,9 +83,9 @@ public class ElectricMotorBlock extends DirectionalKineticBlock implements IBE<E
     }
 
     /**
-     * 获取此方块对应的方块实体类
+     * 获取方块实体类。
      *
-     * @return Class<ElectricMotorBlockEntity> 电力引擎方块实体类
+     * @return 电动马达方块实体类
      */
     @Override
     public Class<ElectricMotorBlockEntity> getBlockEntityClass() {
@@ -80,12 +93,12 @@ public class ElectricMotorBlock extends DirectionalKineticBlock implements IBE<E
     }
 
     /**
-     * 获取此方块对应的方块实体类型
+     * 获取方块实体类型。
      *
-     * @return BlockEntityType<? extends ElectricMotorBlockEntity> 电力引擎方块实体类型
+     * @return 电动马达方块实体类型
      */
     @Override
-    public BlockEntityType<? extends ElectricMotorBlockEntity> getBlockEntityType() {
+    public BlockEntityType<ElectricMotorBlockEntity> getBlockEntityType() {
         return CSGBlockEntities.ELECTRIC_MOTOR.get();
     }
 }

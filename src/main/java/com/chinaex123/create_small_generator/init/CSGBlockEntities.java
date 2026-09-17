@@ -12,7 +12,7 @@ import static com.chinaex123.create_small_generator.CreateSmallGenerator.REGISTR
 
 public class CSGBlockEntities {
 
-    // 动力发电机
+    /** 动力发电机 */
     public static final BlockEntityEntry<KineticDynamoBlockEntity> KINETIC_DYNAMO = REGISTRATE
             .blockEntity("kinetic_dynamo", KineticDynamoBlockEntity::new)
             .visual(() -> KineticDynamoVisual::new, false)
@@ -20,7 +20,7 @@ public class CSGBlockEntities {
             .renderer(() -> KineticDynamoRenderer::new)
             .register();
 
-    // 电力引擎
+    /** 电动马达 */
     public static final BlockEntityEntry<ElectricMotorBlockEntity> ELECTRIC_MOTOR = REGISTRATE
             .blockEntity("electric_motor", ElectricMotorBlockEntity::new)
             .visual(() -> ElectricMotorVisual::new, false)

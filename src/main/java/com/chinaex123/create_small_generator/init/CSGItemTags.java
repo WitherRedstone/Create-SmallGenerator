@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 
-public class CSGItemTags {
+public interface CSGItemTags {
 
 //    TagKey<Item> WOOLS = neoforgeTag("wools");
 

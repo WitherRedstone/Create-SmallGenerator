@@ -14,15 +14,15 @@
   "create.create_small_generator.tooltip.electric_motor.energy_per_second": "每秒消耗：%s %s",
   "create.create_small_generator.tooltip.electric_motor.stress_generated": "应力产生：%s su",
 
-  "config.create_small_generator.kinetic_dynamo": "动力发电机",
-  "config.create_small_generator.energy_per_stress": "每单位转速产生的能量（FE/t per RPM）",
-  "config.create_small_generator.stress_capacity": "发电机消耗的应力容量（单位：su）",
-  "config.create_small_generator.max_transfer_rate": "每次传输的最大能量（单位：FE/t）",
-  "config.create_small_generator.electric_motor": "电动马达",
-  "config.create_small_generator.motor_energy_capacity": "内部能量存储容量（单位：FE）",
-  "config.create_small_generator.motor_speed_per_energy": "每消耗1 FE产生的转速（RPM per FE）",
+  "config.create_small_generator.Kinetic Dynamo": "动力发电机",
+  "config.create_small_generator.energy_per_stress": "每单位转速产生的能量",
+  "config.create_small_generator.stress_capacity": "每 tick 消耗的应力容量",
+  "config.create_small_generator.max_transfer_rate": "每 tick 传输的最大能量",
+  "config.create_small_generator.Electric Motor": "电动马达",
+  "config.create_small_generator.motor_energy_capacity": "内部能量存储容量",
+  "config.create_small_generator.motor_speed_per_energy": "每消耗1 FE产生的转速",
   "config.create_small_generator.motor_stress_per_energy": "每消耗1 FE产生的应力容量系数（最终应力 = 消耗FE × 该值 ÷ 转速）",
-  "config.create_small_generator.motor_max_input_rate": "每 tick 最大能量输入（单位：FE/t）",
-  "config.create_small_generator.motor_max_stress_output": "最大应力输出（单位：SU）"
+  "config.create_small_generator.motor_max_input_rate": "每 tick 最大能量输入",
+  "config.create_small_generator.motor_max_stress_output": "最大应力输出"
 
 }

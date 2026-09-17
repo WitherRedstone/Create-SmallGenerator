@@ -1,6 +1,6 @@
 package com.chinaex123.create_small_generator.block.KineticDynamo;
 
-import com.chinaex123.create_small_generator.config.CommonConfig;
+import com.chinaex123.create_small_generator.config.CSGServerConfig;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.minecraft.ChatFormatting;
@@ -25,30 +25,41 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
- * 动力发电机方块实体类，将输入的应力转换为FE能量并输出到前方相邻方块
+ * 动能发电机方块实体。
+ * <p>
+ * 继承自 Create 的 {@link GeneratingKineticBlockEntity}，将旋转动能转化为 FE 能量。
+ * 转速越高，每 tick 产出的能量越多，产出量受配置的最大传输速率限制。
+ * 能量优先输出到正面的能量容器，其次为物品容器中的可充能物品、
+ * 物品处理器中的可充能物品，最后为正面区域内的实体（含掉落物与玩家）。
+ * 若均无法输出，则将能量暂存于内部缓冲区。
  */
 public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
+
+    /** 上一次记录的转速，用于检测转速变化并更新旋转 */
     private float lastSpeed = 0;
+    /** 缓存的正面区域实体列表，用于充能检测 */
     protected List<Entity> caughtEntities = new ArrayList<>();
 
-    /** 能量缓冲区，存储本 tick 产生的能量供管道提取 */
+    /** 内部能量缓冲区（FE），当无法对外输出时暂存能量 */
     private int energyBuffer = 0;
-    /** 每 tick 最大传输速率 */
+    /** 最大传输速率（FE/t），由配置决定 */
     private final int maxTransferRate;
 
     /**
-     * 能量存储处理器，允许外部从缓冲区提取能量
+     * 能量处理能力实现。
+     * <p>
+     * 仅允许提取能量，禁止外部输入；提取量受缓冲区与最大传输速率限制。
      */
     private final IEnergyStorage energyHandler = new IEnergyStorage() {
+        /** 禁止外部输入能量 */
         @Override
         public int receiveEnergy(int maxReceive, boolean simulate) {
-            // 发电机不接受外部能量输入
             return 0;
         }
 
+        /** 允许提取能量，提取量受缓冲区与最大传输速率限制 */
         @Override
         public int extractEnergy(int maxExtract, boolean simulate) {
             int extracted = Math.min(maxExtract, Math.min(energyBuffer, maxTransferRate));
@@ -80,16 +91,24 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
         }
     };
 
+    /**
+     * 构造动能发电机方块实体。
+     *
+     * @param typeIn 方块实体类型
+     * @param pos    方块位置
+     * @param state  方块状态
+     */
     public KineticDynamoBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
-        this.maxTransferRate = CommonConfig.MAX_TRANSFER_RATE.get();
+        this.maxTransferRate = CSGServerConfig.MAX_TRANSFER_RATE.get();
     }
 
     /**
-     * 获取此方块生成的转速
-     * 由于这是消耗应力的发电机，不产生转速，因此返回0
+     * 获取产生的旋转速度。
+     * <p>
+     * 动能发电机不产生旋转，始终返回 0。
      *
-     * @return float 生成的转速值，固定为0
+     * @return 恒为 0
      */
     @Override
     public float getGeneratedSpeed() {
@@ -97,22 +116,24 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 计算并返回应用到方块的应力值
-     * 此方法用于确定方块消耗的应力单位数量
+     * 计算施加的应力。
+     * <p>
+     * 该方块作为动能消耗方，始终按配置施加固定应力。
      *
-     * @return float 返回应用的应力值，从配置读取
+     * @return 配置的应力值
      */
     @Override
     public float calculateStressApplied() {
-        this.lastStressApplied = CommonConfig.STRESS_CAPACITY.get().floatValue();
-        return CommonConfig.STRESS_CAPACITY.get().floatValue();
+        this.lastStressApplied = CSGServerConfig.STRESS_CAPACITY.get().floatValue();
+        return CSGServerConfig.STRESS_CAPACITY.get().floatValue();
     }
 
     /**
-     * 每刻执行的主要逻辑方法
-     * 处理应力到FE能量的转换和输出
-     * 检测转速变化并更新旋转状态
-     * 智能能量输出：优先输出到方块能量存储，失败则尝试给物品充电
+     * 每 tick 更新逻辑。
+     * <p>
+     * 仅在服务端执行：根据转速计算应产出能量，
+     * 依次尝试输出到正面能量容器、物品容器、物品处理器与实体，
+     * 若均失败则暂存至内部缓冲区。
      */
     @Override
     public void tick() {
@@ -125,13 +146,13 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
         float speed = getSpeed();
         boolean speedChanged = Math.abs(speed - lastSpeed) > 0.01f;
 
-        // 如果转速发生变化且不是客户端，则更新生成的旋转状态
+        // 转速变化时更新旋转状态
         if (speedChanged && !level.isClientSide) {
             lastSpeed = speed;
             updateGeneratedRotation();
         }
 
-        // 如果没有转速，不产生能量
+        // 无转速时清空缓冲区并跳过
         if (speed == 0) {
             energyBuffer = 0;
             return;
@@ -139,16 +160,16 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
 
         Direction front = getBlockState().getValue(KineticDynamoBlock.FACING);
 
-        // 计算本 tick 产生的能量
-        int energyToProduce = (int) (Math.abs(speed) * CommonConfig.ENERGY_PER_STRESS.get());
+        // 根据转速与配置系数计算应产出能量
+        int energyToProduce = (int) (Math.abs(speed) * CSGServerConfig.ENERGY_PER_STRESS.get());
         if (energyToProduce <= 0) {
             return;
         }
 
-        // 限制最大传输速率
+        // 产出量不超过最大传输速率
         energyToProduce = Math.min(energyToProduce, maxTransferRate);
 
-        // 1. 优先尝试输出到前方方块的能量存储
+        // 优先输出到正面的能量容器
         IEnergyStorage blockEnergy = level.getCapability(
                 Capabilities.EnergyStorage.BLOCK,
                 getBlockPos().relative(front),
@@ -158,21 +179,20 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
         if (blockEnergy != null && blockEnergy.canReceive()) {
             int transferred = blockEnergy.receiveEnergy(energyToProduce, false);
             if (transferred > 0) {
-                // 剩余能量存入缓冲区
                 energyBuffer = energyToProduce - transferred;
                 setChanged();
                 return;
             }
         }
 
-        // 2. 尝试给置物台/容器中的物品充电
+        // 其次尝试为正面物品容器中的可充能物品充能
         Container itemStorage = HopperBlockEntity.getContainerAt(level, getBlockPos().relative(front));
         if (chargeItemsInContainer(itemStorage, energyToProduce)) {
             energyBuffer = 0;
             return;
         }
 
-        // 3. 尝试给前方方块的物品处理器中的物品充电
+        // 再次尝试为正面物品处理器中的可充能物品充能
         IItemHandler itemHandler = level.getCapability(
                 Capabilities.ItemHandler.BLOCK,
                 getBlockPos().relative(front),
@@ -183,23 +203,23 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
             return;
         }
 
-        // 4. 尝试给前方区域的掉落物充电
+        // 最后尝试为正面区域内的实体充能
         if (chargeEntitiesInFront(front, energyToProduce)) {
             energyBuffer = 0;
             return;
         }
 
-        // 5. 如果以上都失败，将能量存入缓冲区供管道提取
+        // 均无法输出时暂存至缓冲区
         energyBuffer = energyToProduce;
         setChanged();
     }
 
     /**
-     * 为容器中的物品充电
+     * 为容器中的可充能物品充能。
      *
-     * @param container 容器实例
-     * @param energy 需要输出的能量
-     * @return 是否成功充入能量
+     * @param container 目标容器
+     * @param energy    可用能量
+     * @return 若有物品成功接收能量则返回 true
      */
     private boolean chargeItemsInContainer(Container container, int energy) {
         if (container == null) {
@@ -219,11 +239,11 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 为物品处理器中的物品充电
+     * 为物品处理器中的可充能物品充能。
      *
-     * @param itemHandler 物品处理器
-     * @param energy 需要输出的能量
-     * @return 是否成功充入能量
+     * @param itemHandler 目标物品处理器
+     * @param energy      可用能量
+     * @return 若有物品成功接收能量则返回 true
      */
     private boolean chargeItemsInHandler(IItemHandler itemHandler, int energy) {
         if (itemHandler == null) {
@@ -243,11 +263,13 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 为前方区域的实体（掉落物、玩家等）携带的物品充电
+     * 为正面区域内的实体充能。
+     * <p>
+     * 支持掉落物、玩家（含物品栏与实体能力）以及其他拥有物品能力的实体。
      *
-     * @param front 前方方向
-     * @param energy 需要输出的能量
-     * @return 是否成功充入能量
+     * @param front  方块朝向
+     * @param energy 可用能量
+     * @return 若有实体成功接收能量则返回 true
      */
     private boolean chargeEntitiesInFront(Direction front, int energy) {
         if (level == null) {
@@ -255,13 +277,14 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
         }
 
         caughtEntities.clear();
+        // 获取正面方块位置范围内的所有实体
         caughtEntities = level.getEntities(
                 null,
                 new AABB(getBlockPos().relative(front)).expandTowards(Vec3.atLowerCornerOf(front.getNormal()).scale(0))
         );
 
         for (Entity entity : caughtEntities) {
-            // 尝试给掉落物持有的物品充电
+            // 掉落物：直接为物品充能
             if (entity instanceof ItemEntity itemEntity) {
                 IEnergyStorage itemEnergy = itemEntity.getItem().getCapability(Capabilities.EnergyStorage.ITEM);
                 if (itemEnergy != null && itemEnergy.canReceive() && itemEnergy.getEnergyStored() < itemEnergy.getMaxEnergyStored()) {
@@ -272,7 +295,7 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
                 }
             }
 
-            // 尝试给玩家背包中的物品充电
+            // 玩家：为物品栏与实体物品能力充能
             if (entity instanceof Player player) {
                 if (chargeItemsInContainer(player.getInventory(), energy)) {
                     return true;
@@ -284,7 +307,7 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
                 }
             }
 
-            // 尝试给其他实体的物品处理器充电
+            // 其他实体：为实体物品能力充能
             IItemHandler entityHandler = entity.getCapability(Capabilities.ItemHandler.ENTITY);
             if (chargeItemsInHandler(entityHandler, energy)) {
                 return true;
@@ -294,11 +317,12 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 获取指定方向的能量处理器
-     * 仅在正面方向提供能量提取接口（供管道拉取）
+     * 获取指定方向的能量处理能力。
+     * <p>
+     * 仅当访问方向为方块正面时返回能量处理器，其余方向返回 null。
      *
-     * @param side 查询的方向
-     * @return IEnergyStorage 正面方向返回能量处理器，其他方向返回 null
+     * @param side 访问方向
+     * @return 正面返回能量处理器，否则返回 null
      */
     @Nullable
     public IEnergyStorage getEnergyHandler(Direction side) {
@@ -309,12 +333,22 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
         return null;
     }
 
+    /**
+     * 从 NBT 读取数据。
+     * <p>
+     * 除父类数据外，还读取内部能量缓冲区。
+     */
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
         this.energyBuffer = compound.getInt("EnergyBuffer");
     }
 
+    /**
+     * 将数据写入 NBT。
+     * <p>
+     * 除父类数据外，还写入内部能量缓冲区。
+     */
     @Override
     protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
@@ -322,38 +356,39 @@ public class KineticDynamoBlockEntity extends GeneratingKineticBlockEntity {
     }
 
     /**
-     * 添加到护目镜提示信息
-     * 显示当前转速和能量输出信息
+     * 添加护目镜提示信息。
+     * <p>
+     * 显示当前能量产出（FE/t）、每秒能量产出（FE/s）以及消耗的应力。
      *
-     * @param tooltip 提示组件列表
-     * @param isPlayerSneaking 玩家是否正在潜行
-     * @return boolean 始终返回true表示已添加自定义提示
+     * @param tooltip        提示信息列表
+     * @param isPlayerSneaking 玩家是否潜行
+     * @return 始终返回 true
      */
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 
         float speed = Math.abs(getSpeed());
-        int energyProduced = (int) (speed * CommonConfig.ENERGY_PER_STRESS.get());
+        int energyProduced = (int) (speed * CSGServerConfig.ENERGY_PER_STRESS.get());
         int energyPerSecond = energyProduced * 20;
 
-        // 添加每tick能量产出信息
+        // 每秒能量产出行
         CreateLang.translate("create_small_generator.tooltip.kinetic_dynamo.energy_output",
                         CreateLang.number(energyProduced).component().withStyle(ChatFormatting.YELLOW),
                         CreateLang.text("FE/t").component().withStyle(ChatFormatting.GRAY))
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip);
 
-        // 添加每秒能量产出信息
+        // 每秒能量产出（FE/s）行
         CreateLang.translate("create_small_generator.tooltip.kinetic_dynamo.energy_per_second",
                         CreateLang.number(energyPerSecond).component().withStyle(ChatFormatting.GREEN),
                         CreateLang.text("FE/s").component().withStyle(ChatFormatting.GRAY))
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip);
 
-        // 添加应力消耗信息
+        // 消耗应力行
         CreateLang.translate("create_small_generator.tooltip.kinetic_dynamo.stress_consumed",
-                        CreateLang.number(CommonConfig.STRESS_CAPACITY.get()).component().withStyle(ChatFormatting.RED))
+                        CreateLang.number(CSGServerConfig.STRESS_CAPACITY.get()).component().withStyle(ChatFormatting.RED))
                 .style(ChatFormatting.GRAY)
                 .forGoggles(tooltip);
 
